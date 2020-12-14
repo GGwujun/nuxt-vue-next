@@ -10,7 +10,11 @@ export default {
     };
   },
 
-  mutations: {},
+  mutations: {
+    [SET_USER_DATA](state, { key, value } = {}) {
+      state[key] = value;
+    },
+  },
 
   actions: {
     // 初始化用户信息

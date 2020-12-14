@@ -1,5 +1,10 @@
 <template>
-  <NuxtLink to="/user">Home page goto User Page</NuxtLink>
+  <NuxtLink to="/user"
+    >Click History vueRouter ==== Home page goto User Page</NuxtLink
+  >
+  <div class="vuexButton" @click="init">
+    vuex state , 点击更改状态==== {{ isVirgin }}
+  </div>
   <img alt="Vue logo" src="../assets/logo.png" />
   <HelloWorld msg="Welcome to Your Vue.js App" />
 </template>
@@ -18,7 +23,23 @@ export default {
     };
   },
   created() {
-    console.log("home this =====");
+    console.log("home this =====", this);
+  },
+  computed: {
+    isVirgin() {
+      return this.$store.state.user.isVirgin;
+    },
+  },
+  methods: {
+    init() {
+      this.$store.dispatch("user/init");
+    },
   },
 };
 </script>
+
+<style>
+.vuexButton {
+  cursor: pointer;
+}
+</style>

@@ -26,7 +26,6 @@ let router;
 let store;
 
 const NUXT = window.context || {};
-
 const errorHandler = console.error;
 
 createNuxtApp(null, NUXT.config)
@@ -140,7 +139,6 @@ function checkForErrors(app) {
     app.error();
   }
 }
-
 // When navigating on a different route but the same component is used, Vue.js
 // Will not update the instance data, so we have to update $data ourselves
 function fixPrepatch(to) {
@@ -202,7 +200,7 @@ function nuxtReady(_app) {
   // Add router hooks
   router.afterEach((to, from) => {
     // Wait for fixPrepatch + $data updates
-    Vue.nextTick(() => _app.nuxt.$emit("routeChanged", to, from));
+    nextTick(() => _app.nuxt.$emit("routeChanged", to, from));
   });
 }
 
