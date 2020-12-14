@@ -12,7 +12,7 @@ let store = {};
     );
   }
   store.modules = store.modules || {};
-  resolveStoreModules(require("./store/user.js"), "user.js");
+  resolveStoreModules(require("../store/user.js"), "user.js");
 })();
 
 export const createStoreNuxt = () => createStore(store);

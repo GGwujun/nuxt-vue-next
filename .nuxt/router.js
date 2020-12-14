@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "./pages/Home.vue";
-import User from "./pages/User.vue";
+import Home from "../pages/Home.vue";
+import User from "../pages/User.vue";
 export const routerOptions = {
   history: createWebHistory(),
   base: "./",
