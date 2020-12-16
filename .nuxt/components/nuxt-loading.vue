@@ -1,4 +1,7 @@
+
 <script>
+import { h, resolveComponent } from "vue";
+
 export default {
   name: "NuxtLoading",
   data() {
@@ -136,26 +139,30 @@ export default {
       }, 100);
     },
   },
-  render(h) {
+  render() {
+    console.log(9999999);
     let el = h(false);
     if (this.show) {
-      el = h("div", {
-        staticClass: "nuxt-progress",
-        class: {
-          "nuxt-progress-notransition": this.skipTimerCount > 0,
-          "nuxt-progress-failed": !this.canSucceed,
+      el = h(
+        "div",
+        {
+          staticClass: "nuxt-progress",
+          class: {
+            "nuxt-progress-notransition": this.skipTimerCount > 0,
+            "nuxt-progress-failed": !this.canSucceed,
+          },
+          style: {
+            width: this.percent + "%",
+            left: this.left,
+          },
         },
-        style: {
-          width: this.percent + "%",
-          left: this.left,
-        },
-      });
+        [11111]
+      );
     }
     return el;
   },
 };
 </script>
-<% if (loading && loading.css) { %>
 <style>
 .nuxt-progress {
   position: fixed;
@@ -177,4 +184,4 @@ export default {
 .nuxt-progress-failed {
   background-color: #ddd;
 }
-</style><% } %>
+</style>

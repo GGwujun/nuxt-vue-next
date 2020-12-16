@@ -6,7 +6,5 @@ export default {
   render() {
     return h(resolveComponent("RouterLink"), null, this.$slots.default());
   },
-  mounted() {
-    debugger;
-  },
+  mounted() {},
 };

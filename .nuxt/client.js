@@ -1,5 +1,6 @@
 /* eslint-disable no-debugger */
 import Vue, { createApp, nextTick } from "vue";
+import middleware from "./middleware";
 
 import {
   getMatchedComponents,
@@ -24,6 +25,7 @@ function registerComponents(_app) {
 let app;
 let router;
 let store;
+let rootInstance;
 
 const NUXT = window.context || {};
 const errorHandler = console.error;
@@ -63,6 +65,42 @@ async function loadAsyncComponents(to, from, next) {
   }
 }
 
+// 调用middleware
+function callMiddleware(Components, context, layout) {
+  let midd = ["i18n", "auth", "after-auth", "page-data"];
+  let unknownMiddleware = false;
+
+  // If layout is undefined, only call global middleware
+  if (typeof layout !== "undefined") {
+    midd = []; // Exclude global middleware if layout defined (already called before)
+    layout = sanitizeComponent(layout);
+    if (layout.options.middleware) {
+      midd = midd.concat(layout.options.middleware);
+    }
+    Components.forEach((Component) => {
+      if (Component.options.middleware) {
+        midd = midd.concat(Component.options.middleware);
+      }
+    });
+  }
+
+  midd = midd.map((name) => {
+    if (typeof name === "function") {
+      return name;
+    }
+    if (typeof middleware[name] !== "function") {
+      unknownMiddleware = true;
+      this.error({ statusCode: 500, message: "Unknown middleware " + name });
+    }
+    return middleware[name];
+  });
+
+  if (unknownMiddleware) {
+    return;
+  }
+  return middlewareSeries(midd, context);
+}
+
 async function render(to, from, next) {
   if (
     this._routeChanged === false &&
@@ -88,6 +126,7 @@ async function render(to, from, next) {
     from,
     next: _next.bind(this),
   });
+
   this._dateLastError = app.nuxt.dateErr;
   this._hadError = Boolean(app.nuxt.err);
 
@@ -97,6 +136,24 @@ async function render(to, from, next) {
 
   // If no Components matched, generate 404
   if (!Components.length) {
+    // await callMiddleware.call(this, Components, app.context);
+    // if (nextCalled) {
+    //   return;
+    // }
+
+    // Load layout for error page
+    const errorLayout = (NuxtError.options || NuxtError).layout;
+    const layout = await this._component.methods.loadLayout(
+      typeof errorLayout === "function"
+        ? errorLayout.call(NuxtError, app.context)
+        : errorLayout
+    );
+
+    // await callMiddleware.call(this, Components, app.context, layout);
+    // if (nextCalled) {
+    //   return;
+    // }
+
     // Show error page
     app.context.error({
       statusCode: 404,
@@ -106,6 +163,13 @@ async function render(to, from, next) {
   }
 
   try {
+    // Set layout
+    let layout = Components[0].layout;
+    if (typeof layout === "function") {
+      layout = layout(app.context);
+    }
+    layout = await this._component.methods.loadLayout(layout);
+    console.log("render loadLayout===", layout);
     // If not redirected
     if (!nextCalled) {
       next();
@@ -131,6 +195,33 @@ function normalizeComponents(to) {
     }
     return Component;
   });
+}
+
+function setLayoutForNextPage(to) {
+  // Set layout
+  // let hasError = Boolean(this.$options.nuxt.err);
+  // if (this._hadError && this._dateLastError === this.$options.nuxt.dateErr) {
+  //   hasError = false;
+  // }
+  // let layout = hasError
+  //   ? (NuxtError.options || NuxtError).layout
+  //   : to.matched[0].components.default.options.layout;
+
+  let layout = (to.value || to).matched[0].components.default.layout;
+
+  if (typeof layout === "function") {
+    layout = layout(app.context);
+  }
+
+  if (layout && typeof layout !== "string") {
+    throw new Error("[nuxt] Avoid using non-string value as layout property.");
+  }
+
+  if (!layout) {
+    layout = "default";
+  }
+
+  this.provide("layoutName", "_" + layout);
 }
 
 function checkForErrors(app) {
@@ -221,10 +312,10 @@ async function mountApp(__app) {
   // Mounts Vue app to DOM element
   const mount = () => {
     _app.mount("#__nuxt");
-
+    debugger;
     // Add afterEach router hooks
     router.afterEach(normalizeComponents);
-
+    router.afterEach(setLayoutForNextPage.bind(_app));
     router.afterEach(fixPrepatch.bind(_app));
 
     // Listen for first Vue update
@@ -234,26 +325,20 @@ async function mountApp(__app) {
     });
   };
 
-  // Initialize error handler
-  _app.$loading = {}; // To avoid error while _app.$nuxt does not exist
-  if (NUXT.error) {
-    _app.error(NUXT.error);
-  }
-
-  // Add beforeEach router hooks
   router.beforeEach(loadAsyncComponents.bind(_app));
   router.beforeEach(render.bind(_app));
 
   // First render on client-side
   const clientFirstMount = () => {
     normalizeComponents(router.currentRoute, router.currentRoute);
+    setLayoutForNextPage.call(_app, router.currentRoute);
     checkForErrors(_app);
-    // Don't call fixPrepatch.call(_app, router.currentRoute, router.currentRoute) since it's first render
     mount();
   };
 
   // fix: force next tick to avoid having same timestamp when an error happen on spa fallback
   await new Promise((resolve) => setTimeout(resolve, 0));
+
   render.call(_app, router.currentRoute, router.currentRoute, (path) => {
     // If not redirected
     if (!path) {

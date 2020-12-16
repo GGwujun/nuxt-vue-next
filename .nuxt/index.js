@@ -4,14 +4,14 @@ import { createStoreNuxt } from "./store.js";
 import App from "./App.js";
 import { setContext, getLocation, getRouteData, normalizeError } from "./utils";
 
+// import nuxt_plugin_axios_41871259 from "nuxt_plugin_axios_41871259"; // Source: ./nuxt-axios/axios.js (mode: 'client')
+
 async function createNuxtApp(ssrContext, config = {}) {
   const router = await createRouterNuxt(ssrContext);
   const store = await createStoreNuxt();
   store.$router = router;
 
   const app = {
-    router,
-    store,
     nuxt: {
       err: null,
       dateErr: null,
@@ -89,6 +89,11 @@ async function createNuxtApp(ssrContext, config = {}) {
       inject("preview", previewData);
     };
   }
+
+  //apply plugin
+  // if (typeof nuxt_plugin_axios_41871259 === 'function') {
+  //   await nuxt_plugin_axios_41871259(app.context, inject)
+  // }
 
   if (process.static && process.client) {
     app.context.enablePreview = function() {

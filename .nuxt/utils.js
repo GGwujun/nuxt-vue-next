@@ -596,3 +596,18 @@ export function setScrollRestoration(newVal) {
     console.log(e);
   }
 }
+
+export function sanitizeComponent(Component) {
+  // If Component already sanitized
+  if (Component && Component._Ctor === Component) {
+    return Component;
+  }
+  if (!Component._Ctor) {
+    Component._Ctor = Component;
+  }
+  // If no component name defined, set file path as name, (also fixes #5703)
+  if (!Component.name && Component.__file) {
+    Component.name = Component.__file;
+  }
+  return Component;
+}

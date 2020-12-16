@@ -14,6 +14,7 @@ import HelloWorld from "../components/HelloWorld.vue";
 
 export default {
   name: "App",
+  inject: ["layoutName"],
   components: {
     HelloWorld,
   },
@@ -24,6 +25,7 @@ export default {
   },
   created() {
     console.log("home this =====", this);
+    console.log("layoutName", this.layoutName);
   },
   computed: {
     isVirgin() {
