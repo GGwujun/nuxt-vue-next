@@ -50,32 +50,36 @@ export default function(to, from, savedPosition) {
     nuxt.$nextTick(() => nuxt.$emit("triggerScroll"));
   }
 
+  let onceScroll = false;
+
   return new Promise((resolve) => {
     // wait for the out transition to complete (if necessary)
-    nuxt.$once("triggerScroll", () => {
-      // coords will be used if no selector is provided,
-      // or if the selector didn't match any element.
-      if (to.hash) {
-        let hash = to.hash;
-        // CSS.escape() is not supported with IE and Edge.
-        if (
-          typeof window.CSS !== "undefined" &&
-          typeof window.CSS.escape !== "undefined"
-        ) {
-          hash = "#" + window.CSS.escape(hash.substr(1));
-        }
-        try {
-          if (document.querySelector(hash)) {
-            // scroll to anchor by returning the selector
-            position = { selector: hash };
-          }
-        } catch (e) {
-          console.warn(
-            "Failed to save scroll position. Please add CSS.escape() polyfill (https://github.com/mathiasbynens/CSS.escape)."
-          );
-        }
-      }
-      resolve(position);
-    });
+    if (onceScroll) return resolve();
+    onceScroll = true;
+    // nuxt.$on("triggerScroll", () => {
+    //   // coords will be used if no selector is provided,
+    //   // or if the selector didn't match any element.
+    //   if (to.hash) {
+    //     let hash = to.hash;
+    //     // CSS.escape() is not supported with IE and Edge.
+    //     if (
+    //       typeof window.CSS !== "undefined" &&
+    //       typeof window.CSS.escape !== "undefined"
+    //     ) {
+    //       hash = "#" + window.CSS.escape(hash.substr(1));
+    //     }
+    //     try {
+    //       if (document.querySelector(hash)) {
+    //         // scroll to anchor by returning the selector
+    //         position = { selector: hash };
+    //       }
+    //     } catch (e) {
+    //       console.warn(
+    //         "Failed to save scroll position. Please add CSS.escape() polyfill (https://github.com/mathiasbynens/CSS.escape)."
+    //       );
+    //     }
+    //   }
+    //   resolve(position);
+    // });
   });
 }

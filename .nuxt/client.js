@@ -1,5 +1,5 @@
 /* eslint-disable no-debugger */
-import Vue, { createApp, nextTick } from "vue";
+import Vue, { createApp, nextTick, unref } from "vue";
 import middleware from "./middleware";
 
 import {
@@ -67,19 +67,19 @@ async function loadAsyncComponents(to, from, next) {
 
 // 调用middleware
 function callMiddleware(Components, context, layout) {
-  let midd = ["i18n", "auth", "after-auth", "page-data"];
+  let midd = ["auth"];
   let unknownMiddleware = false;
 
   // If layout is undefined, only call global middleware
   if (typeof layout !== "undefined") {
     midd = []; // Exclude global middleware if layout defined (already called before)
     layout = sanitizeComponent(layout);
-    if (layout.options.middleware) {
-      midd = midd.concat(layout.options.middleware);
+    if (layout.middleware) {
+      midd = midd.concat(layout.middleware);
     }
     Components.forEach((Component) => {
-      if (Component.options.middleware) {
-        midd = midd.concat(Component.options.middleware);
+      if (Component.middleware) {
+        midd = midd.concat(Component.middleware);
       }
     });
   }
@@ -136,10 +136,10 @@ async function render(to, from, next) {
 
   // If no Components matched, generate 404
   if (!Components.length) {
-    // await callMiddleware.call(this, Components, app.context);
-    // if (nextCalled) {
-    //   return;
-    // }
+    await callMiddleware.call(this, Components, app.context);
+    if (nextCalled) {
+      return;
+    }
 
     // Load layout for error page
     const errorLayout = (NuxtError.options || NuxtError).layout;
@@ -149,10 +149,10 @@ async function render(to, from, next) {
         : errorLayout
     );
 
-    // await callMiddleware.call(this, Components, app.context, layout);
-    // if (nextCalled) {
-    //   return;
-    // }
+    await callMiddleware.call(this, Components, app.context, layout);
+    if (nextCalled) {
+      return;
+    }
 
     // Show error page
     app.context.error({
@@ -163,6 +163,14 @@ async function render(to, from, next) {
   }
 
   try {
+    // Call middleware
+    await callMiddleware.call(this, Components, app.context);
+    if (nextCalled) {
+      return;
+    }
+    if (app.context._errored) {
+      return next();
+    }
     // Set layout
     let layout = Components[0].layout;
     if (typeof layout === "function") {
@@ -170,6 +178,16 @@ async function render(to, from, next) {
     }
     layout = await this._component.methods.loadLayout(layout);
     console.log("render loadLayout===", layout);
+
+    // Call middleware for layout
+    await callMiddleware.call(this, Components, app.context, layout);
+    if (nextCalled) {
+      return;
+    }
+    if (app.context._errored) {
+      return next();
+    }
+
     // If not redirected
     if (!nextCalled) {
       next();
@@ -207,7 +225,7 @@ function setLayoutForNextPage(to) {
   //   ? (NuxtError.options || NuxtError).layout
   //   : to.matched[0].components.default.options.layout;
 
-  let layout = (to.value || to).matched[0].components.default.layout;
+  let layout = unref(to).matched[0].components.default.layout;
 
   if (typeof layout === "function") {
     layout = layout(app.context);
@@ -291,7 +309,7 @@ function nuxtReady(_app) {
   // Add router hooks
   router.afterEach((to, from) => {
     // Wait for fixPrepatch + $data updates
-    nextTick(() => _app.nuxt.$emit("routeChanged", to, from));
+    // nextTick(() => _app.nuxt.$emit("routeChanged", to, from));
   });
 }
 
@@ -312,7 +330,6 @@ async function mountApp(__app) {
   // Mounts Vue app to DOM element
   const mount = () => {
     _app.mount("#__nuxt");
-    debugger;
     // Add afterEach router hooks
     router.afterEach(normalizeComponents);
     router.afterEach(setLayoutForNextPage.bind(_app));

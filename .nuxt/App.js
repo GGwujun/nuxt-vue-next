@@ -9,7 +9,6 @@ export default {
   name: "App",
   inject: ["layoutName"],
   render() {
-    debugger;
     const loadingEl = h(resolveComponent("NuxtLoading"), { ref: "loading" });
     const layoutEl = h(layouts[this.layoutName] || "nuxt");
     return h("div", { id: "nuxt_div" }, [loadingEl, layoutEl]);

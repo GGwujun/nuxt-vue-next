@@ -1,5 +1,6 @@
 /* eslint-disable no-debugger */
 import { normalizeURL } from "@nuxt/ufo";
+import { unref } from "vue";
 
 // eslint-disable-next-line no-constant-condition
 if (process.client || true) {
@@ -28,7 +29,7 @@ export function getMatchedComponents(
 ) {
   return Array.prototype.concat.apply(
     [],
-    (route.value || route).matched.map((m, index) => {
+    unref(route).matched.map((m, index) => {
       return Object.keys(m[prop]).map((key) => {
         matches && matches.push(index);
         return m[prop][key];
@@ -44,7 +45,7 @@ export function getMatchedComponentsInstances(route, matches = false) {
 export function flatMapComponents(route, fn) {
   return Array.prototype.concat.apply(
     [],
-    (route.value || route).matched.map((m, index) => {
+    unref(route).matched.map((m, index) => {
       return Object.keys(m.components).reduce((promises, key) => {
         if (m.components[key]) {
           promises.push(fn(m.components[key], m.instances[key], m, key, index));
@@ -83,8 +84,8 @@ export async function getRouteData(route) {
     ...route,
     meta: getMatchedComponents(route).map((Component, index) => {
       const firstMeta = Component.meta ? Component.meta : {};
-      const secondMeta = ((route.value || route).matched[index] || {}).meta
-        ? ((route.value || route).matched[index] || {}).meta
+      const secondMeta = (unref(route).matched[index] || {}).meta
+        ? (unref(route).matched[index] || {}).meta
         : {};
 
       return {
