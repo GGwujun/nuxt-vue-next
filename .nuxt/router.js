@@ -14,7 +14,7 @@ const User = () =>
   );
 
 export const routerOptions = {
-  history: createWebHistory(),
+  history: createWebHistory("/"),
   base: "/",
   linkActiveClass: "nuxt-link-active",
   linkExactActiveClass: "nuxt-link-exact-active",

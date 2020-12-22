@@ -16,6 +16,9 @@ export default {
   head: {
     title: "Nuxt Vuetify Starter",
   },
+  mounted() {
+    debugger;
+  },
 };
 </script>
 

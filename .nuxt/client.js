@@ -15,6 +15,7 @@ import { createNuxtApp } from "./index.js";
 import NuxtLink from "./components/nuxt-link.client.js"; // should be included after ./index.js
 import NuxtChild from "./components/nuxt-child.js";
 import Nuxt from "./components/nuxt.js";
+import NuxtError from "../layouts/error.vue";
 
 function registerComponents(_app) {
   _app.component(NuxtChild.name, NuxtChild);
@@ -22,10 +23,63 @@ function registerComponents(_app) {
   _app.component(NuxtLink.name, NuxtLink);
 }
 
+function setHandlerError(_app) {
+  // Setup global Vue error handler
+  if (!_app.config.$nuxt) {
+    const defaultErrorHandler = _app.config.errorHandler;
+    _app.config.errorHandler = async (err, vm, info, ...rest) => {
+      // Call other handler if exist
+      let handled = null;
+      if (typeof defaultErrorHandler === "function") {
+        handled = defaultErrorHandler(err, vm, info, ...rest);
+      }
+      if (handled === true) {
+        return handled;
+      }
+
+      // if (vm && vm.$root) {
+      //   const nuxtApp = Object.keys(_app.config.$nuxt).find(
+      //     (nuxtInstance) => vm.$root[nuxtInstance]
+      //   );
+
+      //   // Show Nuxt Error Page
+      //   if (nuxtApp && vm.$root[nuxtApp].error && info !== "render function") {
+      //     const currentApp = vm.$root[nuxtApp];
+
+      //     // Load error layout
+      //     let layout = (NuxtError.options || NuxtError).layout;
+      //     if (typeof layout === "function") {
+      //       layout = layout(currentApp.context);
+      //     }
+      //     if (layout) {
+      //       await currentApp.loadLayout(layout).catch(() => {});
+      //     }
+      //     currentApp.setLayout(layout);
+
+      //     currentApp.error(err);
+      //   }
+      // }
+
+      if (typeof defaultErrorHandler === "function") {
+        return handled;
+      }
+
+      // Log to console
+      if (process.env.NODE_ENV !== "production") {
+        console.error(err);
+      } else {
+        console.error(err.message || err);
+      }
+    };
+    _app.config.$nuxt = {};
+  }
+  _app.config.$nuxt.$nuxt = true;
+}
+
 let app;
 let router;
 let store;
-let rootInstance;
+let rootComponent;
 
 const NUXT = window.context || {};
 const errorHandler = console.error;
@@ -326,10 +380,19 @@ async function mountApp(__app) {
   _app.use(store);
 
   registerComponents(_app);
+  setHandlerError(_app);
 
   // Mounts Vue app to DOM element
   const mount = () => {
-    _app.mount("#__nuxt");
+    debugger;
+    rootComponent = _app.mount("#__nuxt");
+    Object.defineProperty(_app.config.globalProperties, "$nuxt", {
+      get() {
+        debugger;
+        return rootComponent.$nuxt;
+      },
+      configurable: true,
+    });
     // Add afterEach router hooks
     router.afterEach(normalizeComponents);
     router.afterEach(setLayoutForNextPage.bind(_app));

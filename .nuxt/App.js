@@ -1,5 +1,6 @@
-import { h, resolveComponent } from "vue";
+import { h, resolveComponent, reactive } from "vue";
 import NuxtLoading from "./components/nuxt-loading.vue";
+import NuxtError from "../layouts/error.vue";
 import { sanitizeComponent } from "./utils";
 
 import _6f6c098b from "./layouts/default.vue";
@@ -10,17 +11,28 @@ export default {
   inject: ["layoutName"],
   render() {
     const loadingEl = h(resolveComponent("NuxtLoading"), { ref: "loading" });
-    const layoutEl = h(layouts[this.layoutName] || "nuxt");
-    return h("div", { id: "nuxt_div" }, [loadingEl, layoutEl]);
+    const layoutEl = h(layouts[this.layout || this.layoutName] || "nuxt");
+    return h(
+      "div",
+      {
+        id: "nuxt_div",
+        emits: {},
+        onClick: () => {
+          this.nuxt.err = "ce";
+        },
+      },
+      [loadingEl, layoutEl]
+    );
   },
+  data: () => ({
+    layout: null,
+  }),
+
   beforeCreate() {
-    this.nuxt = this.$root.$options.nuxt;
+    this.nuxt = reactive(this.$options.nuxt);
   },
   created() {
     this.$root.$options.nuxt = this;
-    if (process.client || true) {
-      window.nuxt = window.$nuxt = this;
-    }
     this.error = this.nuxt.error;
     this.context = this.nuxt.context;
   },
@@ -39,13 +51,13 @@ export default {
           }
         }
 
-        let errorLayout = (NuxtError.options || NuxtError).layout;
+        let errorLayout = NuxtError.layout;
 
         if (typeof errorLayout === "function") {
           errorLayout = errorLayout(this.context);
         }
 
-        this.setLayout(errorLayout);
+        this.layout = "_default";
       }
     },
     loadLayout(layout) {

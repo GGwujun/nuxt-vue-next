@@ -70,9 +70,11 @@ export default {
     },
   },
   beforeCreate() {
+    debugger;
     this.nuxt = this.$root.$options.nuxt;
   },
   render() {
+    debugger;
     if (!this.nuxt.err) {
       return h(resolveComponent("NuxtChild"), {
         key: this.routerViewKey,
